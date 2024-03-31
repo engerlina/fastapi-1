@@ -14,72 +14,32 @@ consumer_secret = os.environ.get("TWITTER_CONSUMER_SECRET")
 accounts = {}
 
 def get_oauth_session(account_id):
-    if account_id not in accounts:
-        # Get request token
-        request_token_url = "https://api.twitter.com/oauth/request_token?oauth_callback=oob&x_auth_access_type=write"
-        oauth = OAuth1Session(consumer_key, client_secret=consumer_secret)
-        fetch_response = oauth.fetch_request_token(request_token_url)
-        resource_owner_key = fetch_response.get("oauth_token")
-        resource_owner_secret = fetch_response.get("oauth_token_secret")
-        print(f"Got OAuth token for account '{account_id}': {resource_owner_key}")
+    access_token = os.environ.get(f"{account_id}_ACCESS_TOKEN")
+    access_token_secret = os.environ.get(f"{account_id}_ACCESS_TOKEN_SECRET")
 
-        # Get authorization
-        base_authorization_url = "https://api.twitter.com/oauth/authorize"
-        authorization_url = oauth.authorization_url(base_authorization_url)
-        print(f"Please go here and authorize account '{account_id}': {authorization_url}")
-        verifier = input(f"Paste the PIN for account '{account_id}' here: ")
-
-        # Get the access token
-        access_token_url = "https://api.twitter.com/oauth/access_token"
-        oauth = OAuth1Session(
-            consumer_key,
-            client_secret=consumer_secret,
-            resource_owner_key=resource_owner_key,
-            resource_owner_secret=resource_owner_secret,
-            verifier=verifier,
-        )
-        oauth_tokens = oauth.fetch_access_token(access_token_url)
-        access_token = oauth_tokens["oauth_token"]
-        access_token_secret = oauth_tokens["oauth_token_secret"]
-        print(f"Access token for account {account_id}: {access_token}")
-        print(f"Access token secret for account {account_id}: {access_token_secret}")
-
-        accounts[account_id] = {
-            "access_token": access_token,
-            "access_token_secret": access_token_secret,
-        }
+    if not access_token or not access_token_secret:
+        raise ValueError(f"Access token or access token secret not found for account '{account_id}'")
 
     return OAuth1Session(
         consumer_key,
         client_secret=consumer_secret,
-        resource_owner_key=accounts[account_id]["access_token"],
-        resource_owner_secret=accounts[account_id]["access_token_secret"],
+        resource_owner_key=access_token,
+        resource_owner_secret=access_token_secret,
     )
-
-def check_authentication(account_id):
-    if account_id not in accounts:
-        print(f"Authentication required for account {account_id}.")
-        get_oauth_session(account_id)
-    else:
-        oauth = OAuth1Session(
-            consumer_key,
-            client_secret=consumer_secret,
-            resource_owner_key=accounts[account_id]["access_token"],
-            resource_owner_secret=accounts[account_id]["access_token_secret"],
-        )
-        response = oauth.get("https://api.twitter.com/2/users/me")
-        if response.status_code != 200:
-            print(f"Authentication failed for account {account_id}. Please re-authorize.")
-            del accounts[account_id]
-            get_oauth_session(account_id)
-        else:
-            print(f"Authentication successful for account {account_id}.")
 
 @app.on_event("startup")
 async def startup_event():
-    account_ids = ["JonochanScaleup", "SolopreneurLab", "Propunter", "LuckyLifeStories"]  # Replace with your account IDs
+    account_ids = ["JonochanScaleup", "SolopreneurLab", "Propunter", "LuckyLifeStories"]
     for account_id in account_ids:
-        check_authentication(account_id)
+        try:
+            oauth = get_oauth_session(account_id)
+            response = oauth.get("https://api.twitter.com/2/users/me")
+            if response.status_code == 200:
+                print(f"Authentication successful for account '{account_id}'")
+            else:
+                print(f"Authentication failed for account '{account_id}'. Please check the access token and access token secret.")
+        except ValueError as e:
+            print(str(e))
 
 @app.post("/webhook")
 async def receive_webhook(request: Request):
