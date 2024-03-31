@@ -46,7 +46,7 @@ async def receive_webhook(request: Request):
     try:
         data = await request.json()
         account_id = data["account_id"]
-        tweet_id = data["tweet_id"]
+        tweet_id = data.get("tweet_id")  # Use get() to handle None values
         tweet_text = data["tweet_text"]
         is_thread = data.get("is_thread", False)
 
@@ -54,9 +54,9 @@ async def receive_webhook(request: Request):
         oauth = get_oauth_session(account_id)
 
         if is_thread:
-            # Create a tweet thread by replying to the first tweet
             if tweet_id is None:
-                # If it's the first tweet in the thread, post it as a new tweet
+                # If it's the first tweet in the thread and no tweet_id is provided,
+                # post it as a new tweet without replying
                 payload = {"text": tweet_text}
                 response = oauth.post("https://api.twitter.com/2/tweets", json=payload)
                 if response.status_code != 201:
@@ -78,7 +78,7 @@ async def receive_webhook(request: Request):
             if response.status_code != 201:
                 raise Exception(f"Request returned an error: {response.status_code} {response.text}")
 
-        return JSONResponse(content={"message": "Tweet posted successfully"})
+        return JSONResponse(content={"message": "Tweet posted successfully", "tweet_id": tweet_id})
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
