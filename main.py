@@ -99,9 +99,13 @@ async def receive_thread_webhook(request: Request):
         tweet_id = None
 
         for tweet_text in tweets:
+            # Skip empty or whitespace-only tweets
+            if not tweet_text.strip():
+                continue
+
             if tweet_id is None:
                 # If it's the first tweet in the thread, post it as a new tweet
-                payload = {"text": tweet_text}
+                payload = {"text": tweet_text.strip()}
                 response = oauth.post("https://api.twitter.com/2/tweets", json=payload)
                 if response.status_code != 201:
                     raise Exception(f"Request returned an error: {response.status_code} {response.text}")
@@ -109,7 +113,7 @@ async def receive_thread_webhook(request: Request):
                 tweet_id = tweet_data["data"]["id"]
             else:
                 # Reply to the previous tweet in the thread
-                payload = {"text": tweet_text, "reply": {"in_reply_to_tweet_id": tweet_id}}
+                payload = {"text": tweet_text.strip(), "reply": {"in_reply_to_tweet_id": tweet_id}}
                 response = oauth.post("https://api.twitter.com/2/tweets", json=payload)
                 if response.status_code != 201:
                     raise Exception(f"Request returned an error: {response.status_code} {response.text}")
