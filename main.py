@@ -82,6 +82,44 @@ async def receive_webhook(request: Request):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.post("/webhook/thread")
+async def receive_thread_webhook(request: Request):
+    try:
+        data = await request.json()
+        account_id = data["account_id"]
+        thread_payload = data["thread_payload"]
+
+        # Split the thread_payload into individual tweets
+        tweets = thread_payload.split("\n")
+
+        # Get OAuth1Session for the specified account
+        oauth = get_oauth_session(account_id)
+
+        tweet_id = None
+
+        for tweet_text in tweets:
+            if tweet_id is None:
+                # If it's the first tweet in the thread, post it as a new tweet
+                payload = {"text": tweet_text}
+                response = oauth.post("https://api.twitter.com/2/tweets", json=payload)
+                if response.status_code != 201:
+                    raise Exception(f"Request returned an error: {response.status_code} {response.text}")
+                tweet_data = response.json()
+                tweet_id = tweet_data["data"]["id"]
+            else:
+                # Reply to the previous tweet in the thread
+                payload = {"text": tweet_text, "reply": {"in_reply_to_tweet_id": tweet_id}}
+                response = oauth.post("https://api.twitter.com/2/tweets", json=payload)
+                if response.status_code != 201:
+                    raise Exception(f"Request returned an error: {response.status_code} {response.text}")
+                tweet_data = response.json()
+                tweet_id = tweet_data["data"]["id"]
+
+        return JSONResponse(content={"message": "Thread posted successfully"})
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
