@@ -237,18 +237,8 @@ async def receive_machinedai_data(data: MachinedAIData):
             article_content_richtext
         )
         article_content_richtext = re.sub(
-            r'<thead>',
-            '<thead><tr><th style="border: 1px solid black; padding: 8px; text-align: left; background-color: #f2f2f2; font-weight: bold;">Type of Option</th><th style="border: 1px solid black; padding: 8px; text-align: left; background-color: #f2f2f2; font-weight: bold;">Description</th></tr></thead>',
-            article_content_richtext
-        )
-        article_content_richtext = re.sub(
-            r'<tbody>',
-            '<tbody>',
-            article_content_richtext
-        )
-        article_content_richtext = re.sub(
-            r'<tr>',
-            '<tr>',
+            r'<th>',
+            '<th style="border: 1px solid black; padding: 8px; text-align: left; background-color: #f2f2f2; font-weight: bold;">',
             article_content_richtext
         )
         article_content_richtext = re.sub(
@@ -258,7 +248,7 @@ async def receive_machinedai_data(data: MachinedAIData):
         )
 
         # Update internal links to point to "/blog"
-        article_content_richtext = re.sub(r'href="(?!/)', 'href="/blog/', article_content_richtext)
+        article_content_richtext = re.sub(r'href="(?!https?://)', 'href="/blog/', article_content_richtext)
 
         # Prepare the payload for Webflow
         payload = {
