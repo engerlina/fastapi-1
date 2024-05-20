@@ -231,7 +231,7 @@ async def receive_machinedai_data(data: MachinedAIData):
                 "name": data.article_title,
                 "slug": data.article_slug,
                 "blog-post-excerpt": data.article_description,
-                "blog-post-richt-text": data.article_content_html,
+                "blog-post-richt-text": data.article_content_markdown,
                 "blog-post-featured-image-photo": {
                     "url": featured_image_url,
                     "alt": data.article_featured_image_alt_text
