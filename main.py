@@ -125,6 +125,20 @@ async def receive_thread_webhook(request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/machinedai/")
+async def receive_machinedai_data(request: Request):
+    try:
+        data = await request.json()
+
+        # Print the received data in the console
+        print("Received data from MachinedAI:")
+        print(data)
+
+        return JSONResponse(content={"message": "Data received successfully"})
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
