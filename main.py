@@ -233,12 +233,27 @@ async def receive_machinedai_data(data: MachinedAIData):
         # Add custom CSS styles to the tables
         article_content_richtext = re.sub(
             r'<table>',
-            '<table style="border-collapse: collapse; width: 100%;">',
+            '<table style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">',
             article_content_richtext
         )
         article_content_richtext = re.sub(
-            r'<th>|<td>',
-            lambda match: f'<{match.group(0)} style="border: 1px solid black; padding: 8px; text-align: left;">',
+            r'<thead>',
+            '<thead><tr><th style="border: 1px solid black; padding: 8px; text-align: left; background-color: #f2f2f2; font-weight: bold;">Type of Option</th><th style="border: 1px solid black; padding: 8px; text-align: left; background-color: #f2f2f2; font-weight: bold;">Description</th></tr></thead>',
+            article_content_richtext
+        )
+        article_content_richtext = re.sub(
+            r'<tbody>',
+            '<tbody>',
+            article_content_richtext
+        )
+        article_content_richtext = re.sub(
+            r'<tr>',
+            '<tr>',
+            article_content_richtext
+        )
+        article_content_richtext = re.sub(
+            r'<td>',
+            '<td style="border: 1px solid black; padding: 8px;">',
             article_content_richtext
         )
 
