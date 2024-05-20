@@ -248,7 +248,7 @@ async def receive_machinedai_data(data: MachinedAIData):
         )
 
         # Update internal links to point to "/blog"
-        article_content_richtext = re.sub(r'href="(?!https?://)', 'href="/blog/', article_content_richtext)
+        article_content_richtext = re.sub(r'href="(?!https?://)', 'href="/blog', article_content_richtext)
 
         # Prepare the payload for Webflow
         payload = {
