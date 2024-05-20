@@ -215,8 +215,8 @@ async def receive_machinedai_data(data: MachinedAIData):
         # Prepare the payload for Webflow
         payload = {
             "fieldData": {
-                "name": data.article_title,  # Add the 'name' field
-                "blog-post-link": data.article_slug,
+                "name": data.article_title,
+                "slug": data.article_slug,
                 "blog-post-title": data.article_title,
                 "blog-post-excerpt": data.article_description,
                 "blog-post-richt-text": data.article_content_html,
