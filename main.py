@@ -227,28 +227,19 @@ async def receive_machinedai_data(data: MachinedAIData):
         thumbnail_image_url = f"https://{s3_bucket_name}.s3.ap-southeast-2.amazonaws.com/{thumbnail_image_filename}"
         print(f"Thumbnail image uploaded successfully. URL: {thumbnail_image_url}")
 
-        # Define custom CSS styles for tables
-        table_styles = """
-        table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-        th, td {
-            border: 1px solid black;
-            padding: 8px;
-            text-align: left;
-        }
-        """
+        # Convert Markdown content to rich text format using markdown with tables extension
+        article_content_richtext = markdown.markdown(data.article_content_markdown, extensions=['tables'])
 
-        # Convert Markdown content to rich text format using markdown with tables extension and custom CSS
-        article_content_richtext = markdown.markdown(
-            data.article_content_markdown,
-            extensions=['tables'],
-            extension_configs={
-                'tables': {
-                    'table_css_style': table_styles
-                }
-            }
+        # Add custom CSS styles to the tables
+        article_content_richtext = re.sub(
+            r'<table>',
+            '<table style="border-collapse: collapse; width: 100%;">',
+            article_content_richtext
+        )
+        article_content_richtext = re.sub(
+            r'<th>|<td>',
+            lambda match: f'<{match.group(0)} style="border: 1px solid black; padding: 8px; text-align: left;">',
+            article_content_richtext
         )
 
         # Update internal links to point to "/blog"
