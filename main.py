@@ -206,12 +206,22 @@ async def receive_machinedai_data(data: MachinedAIData):
         s3 = boto3.client("s3", aws_access_key_id=s3_access_key_id, aws_secret_access_key=s3_secret_access_key)
         
         print(f"Uploading featured image to S3 bucket: {s3_bucket_name}")
-        s3.upload_fileobj(featured_image_file, s3_bucket_name, featured_image_filename)
+        s3.upload_fileobj(
+            featured_image_file,
+            s3_bucket_name,
+            featured_image_filename,
+            ExtraArgs={"ContentType": "image/png"}
+        )
         featured_image_url = f"https://{s3_bucket_name}.s3.ap-southeast-2.amazonaws.com/{featured_image_filename}"
         print(f"Featured image uploaded successfully. URL: {featured_image_url}")
         
         print(f"Uploading thumbnail image to S3 bucket: {s3_bucket_name}")
-        s3.upload_fileobj(thumbnail_image_file, s3_bucket_name, thumbnail_image_filename)
+        s3.upload_fileobj(
+            thumbnail_image_file,
+            s3_bucket_name,
+            thumbnail_image_filename,
+            ExtraArgs={"ContentType": "image/png"}
+        )
         thumbnail_image_url = f"https://{s3_bucket_name}.s3.ap-southeast-2.amazonaws.com/{thumbnail_image_filename}"
         print(f"Thumbnail image uploaded successfully. URL: {thumbnail_image_url}")
 
