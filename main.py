@@ -220,7 +220,6 @@ async def receive_machinedai_data(data: MachinedAIData):
             "fieldData": {
                 "name": data.article_title,
                 "slug": data.article_slug,
-                "blog-post-title": data.article_title,
                 "blog-post-excerpt": data.article_description,
                 "blog-post-richt-text": data.article_content_html,
                 "blog-post-featured-image-photo": {
