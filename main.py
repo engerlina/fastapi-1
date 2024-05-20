@@ -42,6 +42,16 @@ consumer_key = os.environ.get("TWITTER_CONSUMER_KEY")
 consumer_secret = os.environ.get("TWITTER_CONSUMER_SECRET")
 accounts = {}
 
+# Webflow API endpoint and headers
+collection_id = "6645fd351283093f0f2eceac"  # Replace with your collection ID
+api_token = os.environ.get("WEBFLOW_API_TOKEN")  # Get the API token from the environment variables
+items_url = f"https://api.webflow.com/v2/collections/{collection_id}/items"
+headers = {
+    "accept": "application/json",
+    "content-type": "application/json",
+    "authorization": f"Bearer {api_token}"
+}
+
 def get_oauth_session(account_id):
     access_token = os.environ.get(f"{account_id}_ACCESS_TOKEN")
     access_token_secret = os.environ.get(f"{account_id}_ACCESS_TOKEN_SECRET")
@@ -194,13 +204,42 @@ async def receive_machinedai_data(data: MachinedAIData):
         
         print(f"Uploading featured image to S3 bucket: {s3_bucket_name}")
         s3.upload_fileobj(featured_image_file, s3_bucket_name, featured_image_filename)
-        print(f"Featured image uploaded successfully")
+        featured_image_url = f"https://{s3_bucket_name}.s3.amazonaws.com/{featured_image_filename}"
+        print(f"Featured image uploaded successfully. URL: {featured_image_url}")
         
         print(f"Uploading thumbnail image to S3 bucket: {s3_bucket_name}")
         s3.upload_fileobj(thumbnail_image_file, s3_bucket_name, thumbnail_image_filename)
-        print(f"Thumbnail image uploaded successfully")
+        thumbnail_image_url = f"https://{s3_bucket_name}.s3.amazonaws.com/{thumbnail_image_filename}"
+        print(f"Thumbnail image uploaded successfully. URL: {thumbnail_image_url}")
 
-        return JSONResponse(content={"message": "Data received and images uploaded successfully"})
+        # Prepare the payload for Webflow
+        payload = {
+            "fieldData": {
+                "blog-post-link": data.article_slug,
+                "blog-post-title": data.article_title,
+                "blog-post-excerpt": data.article_description,
+                "blog-post-richt-text": data.article_content_html,
+                "blog-post-featured-image-photo": {
+                    "url": featured_image_url,
+                    "alt": data.article_featured_image_alt_text
+                },
+                "blog-post-featured-image-illustration-3": {
+                    "url": thumbnail_image_url,
+                    "alt": data.article_featured_image_alt_text
+                },
+                "blog-post-category": "6645fd351283093f0f2ecf24",
+                "blog-post-author": "6645fd351283093f0f2ece92"
+            }
+        }
+
+        # Upload the data to Webflow
+        response = requests.post(items_url, json=payload, headers=headers)
+        print(f"Response from Webflow: {response.text}")
+
+        if response.status_code == 200:
+            return JSONResponse(content={"message": "Data uploaded to Webflow successfully"})
+        else:
+            raise Exception(f"Error uploading data to Webflow: {response.text}")
 
     except Exception as e:
         print(f"Error: {str(e)}")
