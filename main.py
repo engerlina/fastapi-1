@@ -171,6 +171,9 @@ async def receive_machinedai_data(data: MachinedAIData):
         print("Received data from MachinedAI:")
         print(data)
 
+        # Remove the trailing semicolon from the article_featured_image URL
+        data.article_featured_image = data.article_featured_image.rstrip(';')
+
         # Download the featured image
         response = requests.get(data.article_featured_image)
         image = Image.open(BytesIO(response.content))
