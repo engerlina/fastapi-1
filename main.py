@@ -10,6 +10,7 @@ import requests
 from io import BytesIO
 import boto3
 import markdown
+import re
 
 load_dotenv()
 
@@ -245,11 +246,13 @@ async def receive_machinedai_data(data: MachinedAIData):
             extensions=['tables'],
             extension_configs={
                 'tables': {
-                    'table_css_class': 'custom-table',
                     'table_css_style': table_styles
                 }
             }
         )
+
+        # Update internal links to point to "/blog"
+        article_content_richtext = re.sub(r'href="(?!/)', 'href="/blog/', article_content_richtext)
 
         # Prepare the payload for Webflow
         payload = {
