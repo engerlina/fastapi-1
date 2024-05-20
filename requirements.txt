@@ -6,4 +6,4 @@ requests-oauthlib
 Pillow
 requests
 boto3
-html2text
+markdown2

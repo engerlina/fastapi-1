@@ -9,7 +9,7 @@ from PIL import Image
 import requests
 from io import BytesIO
 import boto3
-import html2text
+import markdown2
 
 load_dotenv()
 
@@ -226,8 +226,8 @@ async def receive_machinedai_data(data: MachinedAIData):
         thumbnail_image_url = f"https://{s3_bucket_name}.s3.ap-southeast-2.amazonaws.com/{thumbnail_image_filename}"
         print(f"Thumbnail image uploaded successfully. URL: {thumbnail_image_url}")
 
-        # Convert HTML content to rich text format using html2text
-        article_content_richtext = html2text.html2text(data.article_content_html)
+        # Convert Markdown content to rich text format using markdown2
+        article_content_richtext = markdown2.markdown(data.article_content_markdown)
 
         # Prepare the payload for Webflow
         payload = {
