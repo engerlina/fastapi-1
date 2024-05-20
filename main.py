@@ -207,12 +207,12 @@ async def receive_machinedai_data(data: MachinedAIData):
         
         print(f"Uploading featured image to S3 bucket: {s3_bucket_name}")
         s3.upload_fileobj(featured_image_file, s3_bucket_name, featured_image_filename)
-        featured_image_url = f"https://{s3_bucket_name}.s3.amazonaws.com/{featured_image_filename}"
+        featured_image_url = f"https://{s3_bucket_name}.s3.ap-southeast-2.amazonaws.com/{featured_image_filename}"
         print(f"Featured image uploaded successfully. URL: {featured_image_url}")
         
         print(f"Uploading thumbnail image to S3 bucket: {s3_bucket_name}")
         s3.upload_fileobj(thumbnail_image_file, s3_bucket_name, thumbnail_image_filename)
-        thumbnail_image_url = f"https://{s3_bucket_name}.s3.amazonaws.com/{thumbnail_image_filename}"
+        thumbnail_image_url = f"https://{s3_bucket_name}.s3.ap-southeast-2.amazonaws.com/{thumbnail_image_filename}"
         print(f"Thumbnail image uploaded successfully. URL: {thumbnail_image_url}")
 
         # Prepare the payload for Webflow
