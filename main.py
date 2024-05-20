@@ -3,10 +3,39 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 from requests_oauthlib import OAuth1Session
+from typing import Optional
+from pydantic import BaseModel
+from PIL import Image
+import requests
+from io import BytesIO
+import boto3
 
 load_dotenv()
 
 app = FastAPI()
+
+class MachinedAIData(BaseModel):
+    cluster_id: str
+    cluster_topic: str
+    cluster_audience: str
+    article_id: str
+    article_slug: str
+    article_title: str
+    article_description: str
+    article_keyword: str
+    article_content_markdown: str
+    article_content_html: str
+    article_featured_image: str
+    article_featured_image_alt_text: str
+    article_featured_image_caption: str
+    article_setting_model: str
+    article_setting_perspective: str
+    article_setting_tone_of_voice: str
+
+# AWS S3 credentials
+s3_bucket_name = os.environ.get("S3_BUCKET_NAME")
+s3_access_key_id = os.environ.get("S3_ACCESS_KEY_ID")
+s3_secret_access_key = os.environ.get("S3_SECRET_ACCESS_KEY")
 
 # Twitter API credentials
 consumer_key = os.environ.get("TWITTER_CONSUMER_KEY")
@@ -126,15 +155,42 @@ async def receive_thread_webhook(request: Request):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/machinedai/")
-async def receive_machinedai_data(request: Request):
+async def receive_machinedai_data(data: MachinedAIData):
     try:
-        data = await request.json()
-
         # Print the received data in the console
         print("Received data from MachinedAI:")
         print(data)
 
-        return JSONResponse(content={"message": "Data received successfully"})
+        # Download the featured image
+        response = requests.get(data.article_featured_image)
+        image = Image.open(BytesIO(response.content))
+
+        # Resize the featured image by 70%
+        featured_image = image.copy()
+        featured_image.thumbnail((int(image.width * 0.7), int(image.height * 0.7)))
+
+        # Save the featured image
+        featured_image_filename = f"blogimages/{data.article_slug}-featured.png"
+        featured_image_file = BytesIO()
+        featured_image.save(featured_image_file, format="PNG")
+        featured_image_file.seek(0)
+
+        # Resize the thumbnail image by 50%
+        thumbnail_image = featured_image.copy()
+        thumbnail_image.thumbnail((int(featured_image.width * 0.5), int(featured_image.height * 0.5)))
+
+        # Save the thumbnail image
+        thumbnail_image_filename = f"blogimages/{data.article_slug}-thumbnail.png"
+        thumbnail_image_file = BytesIO()
+        thumbnail_image.save(thumbnail_image_file, format="PNG")
+        thumbnail_image_file.seek(0)
+
+        # Upload the images to S3
+        s3 = boto3.client("s3", aws_access_key_id=s3_access_key_id, aws_secret_access_key=s3_secret_access_key)
+        s3.upload_fileobj(featured_image_file, s3_bucket_name, featured_image_filename)
+        s3.upload_fileobj(thumbnail_image_file, s3_bucket_name, thumbnail_image_filename)
+
+        return JSONResponse(content={"message": "Data received and images uploaded successfully"})
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

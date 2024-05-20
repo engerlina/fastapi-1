@@ -3,3 +3,6 @@ hypercorn==0.14.4
 uvicorn
 python-dotenv
 requests-oauthlib
+Pillow
+requests
+boto3
