@@ -232,6 +232,10 @@ async def receive_machinedai_data(data: MachinedAIData):
             }
         }
 
+        print(f"Webflow API URL: {items_url}")
+        print(f"Webflow API Headers: {headers}")
+        print(f"Webflow API Payload: {payload}")
+
         # Upload the data to Webflow
         response = requests.post(items_url, json=payload, headers=headers)
         print(f"Response from Webflow: {response.text}")
@@ -239,11 +243,14 @@ async def receive_machinedai_data(data: MachinedAIData):
         if response.status_code == 200:
             return JSONResponse(content={"message": "Data uploaded to Webflow successfully"})
         else:
-            raise Exception(f"Error uploading data to Webflow: {response.text}")
+            error_message = f"Error uploading data to Webflow: {response.text}"
+            print(error_message)
+            raise Exception(error_message)
 
     except Exception as e:
-        print(f"Error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        error_message = f"Error: {str(e)}"
+        print(error_message)
+        raise HTTPException(status_code=500, detail=error_message)
 
 if __name__ == "__main__":
     import uvicorn
