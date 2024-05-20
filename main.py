@@ -175,6 +175,8 @@ async def receive_machinedai_data(data: MachinedAIData):
         featured_image.save(featured_image_file, format="PNG")
         featured_image_file.seek(0)
 
+        print(f"Featured image resized and saved as {featured_image_filename}")
+
         # Resize the thumbnail image by 50%
         thumbnail_image = featured_image.copy()
         thumbnail_image.thumbnail((int(featured_image.width * 0.5), int(featured_image.height * 0.5)))
@@ -185,14 +187,23 @@ async def receive_machinedai_data(data: MachinedAIData):
         thumbnail_image.save(thumbnail_image_file, format="PNG")
         thumbnail_image_file.seek(0)
 
+        print(f"Thumbnail image resized and saved as {thumbnail_image_filename}")
+
         # Upload the images to S3
         s3 = boto3.client("s3", aws_access_key_id=s3_access_key_id, aws_secret_access_key=s3_secret_access_key)
+        
+        print(f"Uploading featured image to S3 bucket: {s3_bucket_name}")
         s3.upload_fileobj(featured_image_file, s3_bucket_name, featured_image_filename)
+        print(f"Featured image uploaded successfully")
+        
+        print(f"Uploading thumbnail image to S3 bucket: {s3_bucket_name}")
         s3.upload_fileobj(thumbnail_image_file, s3_bucket_name, thumbnail_image_filename)
+        print(f"Thumbnail image uploaded successfully")
 
         return JSONResponse(content={"message": "Data received and images uploaded successfully"})
 
     except Exception as e:
+        print(f"Error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
