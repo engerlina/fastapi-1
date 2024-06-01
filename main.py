@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, File, UploadFile, Form
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 from requests_oauthlib import OAuth1Session
@@ -68,6 +68,16 @@ def get_oauth_session(account_id):
         resource_owner_secret=access_token_secret,
     )
 
+def upload_image_to_twitter(oauth, image_data):
+    response = oauth.post(
+        "https://upload.twitter.com/1.1/media/upload.json",
+        files={"media": image_data}
+    )
+    if response.status_code != 200:
+        raise Exception(f"Error uploading image: {response.status_code} {response.text}")
+    media_id = response.json()["media_id_string"]
+    return media_id
+
 @app.on_event("startup")
 async def startup_event():
     account_ids = ["JonochanScaleup", "SolopreneurLab", "Propunter", "LuckyLifeStories","Whopreviews"]
@@ -83,22 +93,30 @@ async def startup_event():
             print(str(e))
 
 @app.post("/webhook")
-async def receive_webhook(request: Request):
+async def receive_webhook(
+    account_id: str = Form(...),
+    tweet_text: str = Form(...),
+    image: Optional[UploadFile] = File(None),
+    tweet_id: Optional[str] = Form(None),
+    is_thread: bool = Form(False)
+):
     try:
-        data = await request.json()
-        account_id = data["account_id"]
-        tweet_id = data.get("tweet_id")  # Use get() to handle None values
-        tweet_text = data["tweet_text"]
-        is_thread = data.get("is_thread", False)
-
         # Get OAuth1Session for the specified account
         oauth = get_oauth_session(account_id)
+
+        # Upload image to Twitter if provided
+        media_id = None
+        if image:
+            image_data = await image.read()
+            media_id = upload_image_to_twitter(oauth, image_data)
 
         if is_thread:
             if tweet_id is None:
                 # If it's the first tweet in the thread and no tweet_id is provided,
                 # post it as a new tweet without replying
                 payload = {"text": tweet_text}
+                if media_id:
+                    payload["media"] = {"media_ids": [media_id]}
                 response = oauth.post("https://api.twitter.com/2/tweets", json=payload)
                 if response.status_code != 201:
                     raise Exception(f"Request returned an error: {response.status_code} {response.text}")
@@ -107,6 +125,8 @@ async def receive_webhook(request: Request):
             else:
                 # Reply to the previous tweet in the thread
                 payload = {"text": tweet_text, "reply": {"in_reply_to_tweet_id": tweet_id}}
+                if media_id:
+                    payload["media"] = {"media_ids": [media_id]}
                 response = oauth.post("https://api.twitter.com/2/tweets", json=payload)
                 if response.status_code != 201:
                     raise Exception(f"Request returned an error: {response.status_code} {response.text}")
@@ -115,6 +135,8 @@ async def receive_webhook(request: Request):
         else:
             # Post a single tweet
             payload = {"text": tweet_text}
+            if media_id:
+                payload["media"] = {"media_ids": [media_id]}
             response = oauth.post("https://api.twitter.com/2/tweets", json=payload)
             if response.status_code != 201:
                 raise Exception(f"Request returned an error: {response.status_code} {response.text}")
@@ -125,12 +147,12 @@ async def receive_webhook(request: Request):
         raise HTTPException(status_code=500, detail=str(e))
     
 @app.post("/webhook/thread")
-async def receive_thread_webhook(request: Request):
+async def receive_thread_webhook(
+    account_id: str = Form(...),
+    thread_payload: str = Form(...),
+    image: Optional[UploadFile] = File(None)
+):
     try:
-        data = await request.json()
-        account_id = data["account_id"]
-        thread_payload = data["thread_payload"]
-
         # Split the thread_payload into individual tweets
         tweets = thread_payload.split("\n")
 
@@ -138,6 +160,11 @@ async def receive_thread_webhook(request: Request):
         oauth = get_oauth_session(account_id)
 
         tweet_id = None
+        media_id = None
+
+        if image:
+            image_data = await image.read()
+            media_id = upload_image_to_twitter(oauth, image_data)
 
         for tweet_text in tweets:
             # Skip empty or whitespace-only tweets
@@ -147,6 +174,8 @@ async def receive_thread_webhook(request: Request):
             if tweet_id is None:
                 # If it's the first tweet in the thread, post it as a new tweet
                 payload = {"text": tweet_text.strip()}
+                if media_id:
+                    payload["media"] = {"media_ids": [media_id]}
                 response = oauth.post("https://api.twitter.com/2/tweets", json=payload)
                 if response.status_code != 201:
                     raise Exception(f"Request returned an error: {response.status_code} {response.text}")
@@ -155,6 +184,8 @@ async def receive_thread_webhook(request: Request):
             else:
                 # Reply to the previous tweet in the thread
                 payload = {"text": tweet_text.strip(), "reply": {"in_reply_to_tweet_id": tweet_id}}
+                if media_id:
+                    payload["media"] = {"media_ids": [media_id]}
                 response = oauth.post("https://api.twitter.com/2/tweets", json=payload)
                 if response.status_code != 201:
                     raise Exception(f"Request returned an error: {response.status_code} {response.text}")
