@@ -70,7 +70,7 @@ def get_oauth_session(account_id):
 
 @app.on_event("startup")
 async def startup_event():
-    account_ids = ["JonochanScaleup", "SolopreneurLab", "Propunter", "LuckyLifeStories"]
+    account_ids = ["JonochanScaleup", "SolopreneurLab", "Propunter", "LuckyLifeStories","Whopreviews"]
     for account_id in account_ids:
         try:
             oauth = get_oauth_session(account_id)
