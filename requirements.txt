@@ -7,3 +7,4 @@ Pillow
 requests
 boto3
 markdown
+python-multipart
